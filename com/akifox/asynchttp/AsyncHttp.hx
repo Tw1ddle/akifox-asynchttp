@@ -603,7 +603,7 @@ class AsyncHttp {
     return headers;
   }
 
-  private function convertToFlashHeaders(httpHeaders:HttpHeaders):Array<Dynamic>{
+  private function convertToFlashHeaders(httpHeaders:HttpHeaders):Array<URLRequestHeader>{
     var headers = new Array<URLRequestHeader>();
     if (httpHeaders != null) {
       for (key in httpHeaders.keys()) {
@@ -639,10 +639,10 @@ class AsyncHttp {
       //urlRequest.dataFormat = (request.contentIsBinary?URLLoaderDataFormat.BINARY:URLLoaderDataFormat.TEXT);
     }
 
-    // if (request.headers!=null) { // TODO check if supported (it looks only on POST and limited)
+    if (request.headers!=null) { // TODO check if supported (it looks only on POST and limited)
     // 	// custom headers
-    // 	urlRequest.requestHeaders = convertToFlashHeaders(request.headers);
-    // }
+     	urlRequest.requestHeaders = convertToFlashHeaders(request.headers);
+     }
 
     var httpstatusDone = false;
 
@@ -689,7 +689,8 @@ class AsyncHttp {
       if (!httpstatusDone) status = 200;
 
       var time = elapsedTime(start);
-      content = Bytes.ofString(e.target.data);
+      var target:Dynamic = cast e.target;
+      content = Bytes.ofString(target.data);
       log('Response Complete $status ($time s)\n> ${request.method} ${request.url}', request.fingerprint);
       this.callback(request, time, url, headers, status, content);
       urlLoader = null;
@@ -719,6 +720,10 @@ class AsyncHttp {
 
     var r = new haxe.Http(url.toString());
     r.async = request.async;
+
+    for (key in request.headers.keys()) {
+        r.setHeader(key, request.headers.get(key));
+    }
     //r.setHeader("User-Agent",userAgent); //TODO disabled because it gives a warning in Chrome
     if (request.content != null) {
       r.setPostData(Std.string(request.content));
